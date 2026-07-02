@@ -1,0 +1,83 @@
+# 本番用。prod ステージ（distroless・非root）をビルド。bind マウントなし、秘密情報は .env から注入。
+#   cp docker/.env.prod.example docker/.env.prod
+#   docker compose --env-file docker/.env.prod -f docker/docker-compose.prod.yml up -d --build
+name: mobility-infra-prod
+
+x-service: &service
+  restart: unless-stopped
+  networks: [mobility]
+
+services:
+  web:
+    <<: *service
+    build: { context: .., dockerfile: docker/web/Dockerfile, target: prod }
+    ports: ["80:80"]
+    depends_on: [frontend, portal, backend, model]
+
+  frontend:
+    <<: *service
+    build: { context: .., dockerfile: docker/frontend/Dockerfile, target: prod }
+    expose: ["3000"]
+    environment:
+      BACKEND_URL: http://backend:8080
+    depends_on: [backend]
+
+  portal:
+    <<: *service
+    build: { context: .., dockerfile: docker/portal/Dockerfile, target: prod }
+    expose: ["3000"]
+    environment:
+      BACKEND_URL: http://backend:8080
+    depends_on: [backend]
+
+  model:
+    <<: *service
+    build: { context: .., dockerfile: docker/model/Dockerfile, target: prod }
+    expose: ["8000"]
+    # slim だが distroless ではないので shell あり。必要なら healthcheck を足す
+
+  backend:
+    <<: *service
+    build: { context: .., dockerfile: docker/backend/Dockerfile, target: prod }
+    expose: ["8080"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:?set in .env.prod}:${POSTGRES_PASSWORD:?set in .env.prod}@db:5432/${POSTGRES_DB:?set in .env.prod}?sslmode=disable
+      CACHE_URL: redis://cache:6379
+    depends_on:
+      db: { condition: service_healthy }
+      cache: { condition: service_healthy }
+    # distroless はシェルが無いのでコンテナ内 healthcheck は持たない
+
+  db:
+    <<: *service
+    build: { context: .., dockerfile: docker/db/Dockerfile, target: prod }
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set in .env.prod}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env.prod}
+      POSTGRES_DB: ${POSTGRES_DB:?set in .env.prod}
+    volumes:
+      - db_data:/var/lib/postgresql   # PG18+ のマウント先
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  cache:
+    <<: *service
+    build: { context: .., dockerfile: docker/cache/Dockerfile, target: prod }
+    command: ["valkey-server", "/usr/local/etc/valkey/valkey.conf"]
+    volumes:
+      - cache_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db_data:
+  cache_data:
+
+networks:
+  mobility:

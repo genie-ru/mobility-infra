@@ -1,0 +1,7 @@
+# TypeScript サービス群を pnpm workspace として束ねる。
+# 各サービスの Docker ビルドはサービス単位で独立して行うため、workspace は
+# 主にホスト側の一括 install / エディタの型解決のためのもの。
+packages:
+  - services/backend
+  - services/frontend
+  - services/portal

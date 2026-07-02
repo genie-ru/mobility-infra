@@ -1,0 +1,6 @@
+failure-threshold: warning
+trustedRegistries:
+  - docker.io
+  - gcr.io
+ignored:
+  - DL3059

@@ -1,0 +1,5 @@
+*
+!services/backend
+services/backend/node_modules
+services/backend/dist
+**/*.log

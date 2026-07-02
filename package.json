@@ -1,0 +1,13 @@
+{
+  "name": "mobility-infra",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "up": "docker compose -f docker/docker-compose.yml up -d --build",
+    "down": "docker compose -f docker/docker-compose.yml down"
+  }
+}

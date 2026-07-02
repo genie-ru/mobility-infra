@@ -1,0 +1,40 @@
+name: code
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# TS サービスの静的検査（typecheck / lint / format）。Docker イメージとは独立に、
+# GitHub の Node で高速に回す。--frozen-lockfile で lockfile のズレも同時に検知する。
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [backend, frontend, portal]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable pnpm (corepack)
+        run: corepack enable
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile --ignore-workspace
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Format check
+        run: pnpm run format:check
+
+      - name: Typecheck
+        run: pnpm run typecheck

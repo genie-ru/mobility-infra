@@ -1,0 +1,5 @@
+*
+!services/model
+services/model/__pycache__
+services/model/.venv
+**/*.pyc
