@@ -1,11 +1,11 @@
-# Next.js 利用者ポータル（Node 22 / pnpm）。dev=next dev / prod=standalone を distroless で実行。
-FROM node:22-bookworm-slim AS deps
+# Next.js 利用者ポータル（Node 24 / pnpm）。dev=next dev / prod=standalone を distroless で実行。
+FROM node:24-bookworm-slim AS deps
 RUN corepack enable
 WORKDIR /app
 COPY services/portal/package.json services/portal/pnpm-lock.yaml services/portal/.npmrc ./
 RUN pnpm install --frozen-lockfile
 
-FROM node:22-bookworm-slim AS builder
+FROM node:24-bookworm-slim AS builder
 RUN corepack enable
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -14,14 +14,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm run build
 
 # dev: ソースは compose の bind マウントで /app に入る
-FROM node:22-bookworm-slim AS dev
+FROM node:24-bookworm-slim AS dev
 RUN corepack enable
 WORKDIR /app
 EXPOSE 3000
 CMD ["sh", "-c", "pnpm install && pnpm run dev"]
 
 # prod: distroless 非root、standalone を node で実行
-FROM gcr.io/distroless/nodejs22-debian12:nonroot AS prod
+FROM gcr.io/distroless/nodejs24-debian12:nonroot AS prod
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \

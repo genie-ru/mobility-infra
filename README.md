@@ -73,9 +73,9 @@ AISCEAS のフレームワークに沿って、カスタマージャーニーマ
 
 | サービス | 役割 | ランタイム | 公開経路 |
 |---|---|---|---|
-| `backend` | REST API（運営者・利用者共通のバックエンド） | Node 22 / Nest.js | `/api` |
-| `frontend` | 運営者向け管理画面 | Node 22 / Next.js | `/` |
-| `portal` | 利用者向けポータル（申込〜契約） | Node 22 / Next.js | `/portal` |
+| `backend` | REST API（運営者・利用者共通のバックエンド） | Node 24 / Nest.js | `/api` |
+| `frontend` | 運営者向け管理画面 | Node 24 / Next.js | `/` |
+| `portal` | 利用者向けポータル（申込〜契約） | Node 24 / Next.js | `/portal` |
 | `web` | エッジ（nginx リバースプロキシ） | nginx | `:80` |
 | `model` | AI 推論 API | Python / FastAPI | `/model` |
 | `notebook` | データ分析環境（dev 専用） | JupyterLab | `:8888` |
