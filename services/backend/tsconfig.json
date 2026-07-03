@@ -13,6 +13,9 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "incremental": true,
+    // deleteOutDir(nest-cli) が dist/ を消すたびに一緒に消えるよう dist 配下へ置く。
+    // 直下に残すと dist だけ消えて emit がスキップされ dist/main が生成されない。
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true
