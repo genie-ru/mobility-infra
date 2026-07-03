@@ -244,9 +244,95 @@ export class UsersService {
 ```
 → Controller は `return this.usersService.findAll()` のように**呼ぶだけ**になる。
 
+依存性が注入されているかの確認
+user.logger.tsを作成する。
 
 
+user.service.tsにlogger.tsをいれる。
+
+つまり
+UserControllerはUserServiceを必要としていて、
+UserServiceはLoggerServiceを必要とし
+Nestは 作成されたすべてが必要
 ## 追って埋めるトピック
 - **スコープ**：既定は **Singleton**（アプリ全体で1インスタンス）。ほかに `REQUEST` / `TRANSIENT`。
 - **他モジュールで共有**：提供側で `exports`、利用側で `imports`。
 - **カスタムプロバイダ**：`useClass` / `useValue` / `useFactory` / `useExisting` とトークン注入 `@Inject('TOKEN')`。
+
+
+## 実際の UserController（CRUD）— 添削版
+
+ロジックを `UserService` に寄せた結果、Controller は各エンドポイントで **Service を呼ぶだけ**の薄い層になった（＝単一責務）。
+
+```ts
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UserService } from './user.service';
+
+@Controller('user')
+export class UserController {
+  constructor(private readonly userService: UserService) {} // DI
+
+  @Get() // GET /user?name=
+  getUsers(@Query('name') name: string) {
+    return this.userService.findAllUsers(name);
+  }
+
+  @Get(':id') // GET /user/:id
+  getUserById(@Param('id') id: string) {
+    return this.userService.findOneUser(Number(id));
+  }
+
+  @Post() // POST /user
+  createUser(@Body() createUserDto: CreateUserDto) {
+    return this.userService.createUser(createUserDto);
+  }
+
+  @Put(':id') // PUT /user/:id
+  updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.userService.updateUser(Number(id), updateUserDto);
+  }
+
+  @Delete(':id') // DELETE /user/:id
+  deleteUser(@Param('id') id: string) {
+    return this.userService.deleteUser(Number(id));
+  }
+}
+```
+
+**添削ポイント**
+1. **`getUsers(): unknown` の `: unknown` を外す**。これは「戻り値の型 `User` が名前指定できない（TS4053）」を避けるための逃げになっていた。`User` を `export` した今は不要で、付けると呼び出し側で型が失われ逆効果。**推論に任せる（`User[]`）** か、明示するなら `: User[]`。
+2. **`@Body() CreateUserDto` → `createUserDto`（camelCase）**：クラス名と同じ PascalCase の引数は shadowing で紛らわしい（前章の指摘と同じ）。
+3. **`Number(id)` は検証しない**：不正値でも `NaN` になるだけ。堅くするなら `@Param('id', ParseIntPipe)` で数値化＋400 自動化（`@Param` の章参照）。
+4. エンドポイントは **5つ**（GET 一覧 / GET 個別 / POST / PUT / DELETE）。CRUD の「Read」が一覧＋個別の2つなので、操作としては4種類。
+5. `UpdateUserDto` は `PartialType`（部分更新）なので、意味的には `@Patch(':id')` が自然（PUT は全置換）。
+
+> 実ファイル `user.controller.ts` にも 1・2 はそのまま当てはまる（`: unknown` と `CreateUserDto` 引数名）。直したい場合は言ってください。
+
+---
+
+# 例外処理編（次に書く）
+
+※ メモ用スケルトン。ここを埋めていく。
+
+## なぜ必要か
+- 今は存在しない id でも `null` を返すだけで **200 が返ってしまう**。REST 的には **404 を返すべき**。
+- Nest は例外を **throw** すると、内蔵の例外フィルターが**自動で HTTP レスポンスに変換**してくれる。
+
+## 組み込み例外（`@nestjs/common`）
+```ts
+import { NotFoundException } from '@nestjs/common';
+
+findOneUser(id: number) {
+  const user = this.users.find((u) => u.id === id);
+  if (!user) throw new NotFoundException(`User ${id} not found`); // → 404
+  return user;
+}
+```
+- 代表例：`NotFoundException`(404) / `BadRequestException`(400) / `UnauthorizedException`(401) / `ForbiddenException`(403) / `ConflictException`(409)。汎用は `HttpException(message, status)`。
+- `service` で throw すれば `controller` は素通しで OK（Nest がレスポンス化）。
+
+## 追って埋めるトピック
+- カスタム例外クラス（`extends HttpException`）。
+- 例外フィルター `@Catch()` + `ExceptionFilter` で整形・ログ。
