@@ -13,10 +13,20 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY services/backend/ ./
 RUN pnpm run build && pnpm prune --prod
 
-# dev: ソースは compose の bind マウントで /app に入る
+# dev: ソースは compose の bind マウントで /app に入る。
+# 生成物(node_modules 等)をホスト(genie=uid1000)と同じ所有者にするため、node イメージ同梱の
+# node ユーザー(uid/gid 1000)で実行する。これで bind マウントに root 所有ファイルを作らせない。
+# 名前指定(USER node)なので HOME=/home/node が設定され、corepack/pnpm のDL・ストアも書き込める。
 FROM node:24-bookworm-slim AS dev
+# nest start --watch(tsc-watch) は再起動時に tree-kill で旧プロセスを終了させるが、
+# tree-kill は ps(procps) に依存する。slim には ps が無く、欠けると子プロセス(node)を
+# 特定できず kill できない → orphan 化して 8080 を握り続け EADDRINUSE になる。dev のみ導入。
+RUN apt-get update && apt-get install -y --no-install-recommends procps \
+ && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 WORKDIR /app
+RUN chown node:node /app
+USER node
 EXPOSE 8080
 CMD ["sh", "-c", "pnpm install && pnpm run start:dev"]
 

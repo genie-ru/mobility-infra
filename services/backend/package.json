@@ -17,12 +17,26 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "echo \"(no tests yet)\""
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage"
+  },
+  "jest": {
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": ["**/*.(t|j)s"],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/testing": "^11.1.27",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -30,10 +44,13 @@
     "@eslint/js": "^9.17.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
+    "jest": "^30.4.2",
     "prettier": "^3.4.2",
+    "ts-jest": "^29.4.11",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.19.0"
   }

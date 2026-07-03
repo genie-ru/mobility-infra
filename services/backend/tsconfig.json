@@ -10,7 +10,13 @@
     "experimentalDecorators": true,
     "esModuleInterop": true,
     "moduleResolution": "nodenext",
+    // ts-jest が nodenext(hybrid module) を扱うのに必須。ファイル単位トランスパイルを明示。
+    "isolatedModules": true,
     "resolveJsonModule": true,
+    // TS6.0 以降は types 未指定時に node_modules/@types/* を自動 include しない。
+    // VS Code 同梱の tsserver(6.x) で describe/expect 等が「見つかりません」になるため明示する。
+    // （CI の tsc 5.9.3 は自動 include で通っていたのでエディタだけ赤くなっていた）
+    "types": ["node", "jest"],
     "sourceMap": true,
     "incremental": true,
     // deleteOutDir(nest-cli) が dist/ を消すたびに一緒に消えるよう dist 配下へ置く。

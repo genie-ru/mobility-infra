@@ -13,10 +13,15 @@ COPY services/frontend/ ./
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm run build
 
-# dev: ソースは compose の bind マウントで /app に入る
+# dev: ソースは compose の bind マウントで /app に入る。
+# 生成物(node_modules 等)をホスト(genie=uid1000)と同じ所有者にするため、node イメージ同梱の
+# node ユーザー(uid/gid 1000)で実行する。これで bind マウントに root 所有ファイルを作らせない。
+# 名前指定(USER node)なので HOME=/home/node が設定され、corepack/pnpm のDL・ストアも書き込める。
 FROM node:24-bookworm-slim AS dev
 RUN corepack enable
 WORKDIR /app
+RUN chown node:node /app
+USER node
 EXPOSE 3000
 CMD ["sh", "-c", "pnpm install && pnpm run dev"]
 

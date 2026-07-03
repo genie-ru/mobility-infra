@@ -11,5 +11,9 @@
     "**/node_modules": true,
     "**/.next": true,
     "**/dist": true
-  }
+  },
+
+  // エディタの TypeScript をワークスペース版(= services/backend の TS)に固定する。
+  // 未指定だと VS Code 同梱版(6.x 等)が使われ、CI の tsc(5.x) と挙動がズレる（@types 自動 include 廃止など）。
+  "typescript.tsdk": "services/backend/node_modules/typescript/lib"
 }
